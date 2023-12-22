@@ -1,0 +1,5 @@
+# Ignore puzzle input
+input*.txt
+
+# Ignore venv
+venv
