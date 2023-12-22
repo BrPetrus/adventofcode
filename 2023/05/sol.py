@@ -1,23 +1,21 @@
 from io import TextIOBase
 from typing import Union
 
-Mapping = dict[int, int]
+Mapping = list[tuple[int, int, int]]
 Configuration = tuple[list[int], list[Mapping]]
 
 def read_input(stream: TextIOBase) -> Configuration:
     def read_mapping():
-        mapping = {}
+        mapping = []
         assert stream.readline() != ''  # Read header
 
         line = stream.readline()
         while line != '\n':
-            print(line.strip().split(' '))
             dest, src, length = line.split(' ')
             length = int(length)
             dest = int(dest)
             src = int(src)
-            for i in range(length):
-                mapping[src+i] = dest+i
+            mapping.append((dest, src, length))
             line = stream.readline()
         return mapping
 
@@ -43,7 +41,11 @@ def sol(input_stream: TextIOBase) -> int:
     for seed in seeds:
         location = seed
         for mapping in mappings:
-            location = mapping.get(location, location)
+            for entry in mapping:
+                if location >= entry[1] and location < entry[1]+entry[2]:
+                    location = entry[0] + (location - entry[1])
+                    break
+
         assert location != -1
         if best_seed is None or best_seed[1] > location:
             best_seed = (seed, location)
