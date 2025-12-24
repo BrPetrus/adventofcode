@@ -1,0 +1,14 @@
+from functools import reduce
+from typing import List
+
+def increasing_predicate(l: List[int]) -> bool:
+    return reduce(
+        lambda x, y: x and y[0][0] < y[0][1],
+        list(zip(l, l[1:])),
+        True
+    )
+
+l = [1,2,3,4]
+print(list(zip(l,l[1:])))
+#print(increasing_predicate([1,2,3,4,5]))
+
