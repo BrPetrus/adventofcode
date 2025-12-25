@@ -2,19 +2,20 @@ use std::{cmp::{max, min}, fs::File, io::Read, path::Path, vec};
 use std::collections::HashSet;
 
 #[derive(Debug)]
+#[derive(Clone, Copy)]
 struct Range {
-    from: u64,
-    to: u64,
+    from: u128,
+    to: u128,
 }
 impl Range {
-    fn inside_range(&self, num: &u64) -> bool {
+    fn inside_range(&self, num: &u128) -> bool {
         self.from <= *num && self.to >= *num
     }
 }
 
-fn parse_input(input: &str) -> (Vec<Range>, Vec<u64>) {
+fn parse_input(input: &str) -> (Vec<Range>, Vec<u128>) {
     let mut valid_ranges: Vec<Range> = Vec::new();
-    let mut ingredients_ids: Vec<u64> = Vec::new();
+    let mut ingredients_ids: Vec<u128> = Vec::new();
 
 
     // While we encounter legal ranges
@@ -35,17 +36,17 @@ fn parse_input(input: &str) -> (Vec<Range>, Vec<u64>) {
     (valid_ranges, ingredients_ids)
 }
 
-fn part1(valid_ranges: &Vec<Range>, ingredient_ids: &Vec<u64>) -> u64 {
+fn part1(valid_ranges: &Vec<Range>, ingredient_ids: &Vec<u128>) -> u128 {
     ingredient_ids.iter()
         .filter(
             |num| valid_ranges.iter().any(
                 |range|range.inside_range(num)
             )
         )
-        .count() as u64
+        .count() as u128
 }
 
-fn part2_bruteforce(valid_ranges: &Vec<Range>) -> u64 {
+fn part2_bruteforce(valid_ranges: &Vec<Range>) -> u128 {
     let biggest = valid_ranges.iter().fold(0, |maximum, range| max(maximum, range.to));
     let smallest = valid_ranges.iter().fold(0, |maximum, range| min(maximum, range.to));
     (smallest..=biggest).into_iter()
@@ -54,10 +55,10 @@ fn part2_bruteforce(valid_ranges: &Vec<Range>) -> u64 {
                 |range| range.inside_range(num)
             )
         )
-        .count() as u64
+        .count() as u128
 }
 
-fn part2_bruteforce_memory(valid_ranges: &Vec<Range>) -> u64 {
+fn part2_bruteforce_memory(valid_ranges: &Vec<Range>) -> u128 {
     let biggest = valid_ranges.iter().fold(0, |maximum, range| max(maximum, range.to)) as usize;
     let smallest = valid_ranges.iter().fold(0, |maximum, range| min(maximum, range.to)) as usize;
     let mut memory: Vec<bool> = vec![false; (biggest-smallest+1) as usize];
@@ -73,8 +74,8 @@ fn part2_bruteforce_memory(valid_ranges: &Vec<Range>) -> u64 {
     solution
 }
 
-fn part2_using_sets(valid_ranges: &Vec<Range>) -> u64 {
-    let mut valid_numbers: HashSet<u64> = HashSet::new();
+fn part2_using_sets(valid_ranges: &Vec<Range>) -> u128 {
+    let mut valid_numbers: HashSet<u128> = HashSet::new();
     let mut i = 0;
     for range in valid_ranges {
         println!("{} / {}", i, valid_ranges.len());
@@ -84,12 +85,47 @@ fn part2_using_sets(valid_ranges: &Vec<Range>) -> u64 {
         i += 1;
     }
 
-    valid_numbers.len() as u64
+    valid_numbers.len() as u128
 }
 
-fn part2(valid_ranges: &Vec<Range>) -> u64 {
+fn part2_merging_ranges(valid_ranges: &Vec<Range>) -> u128 {
+    // Sort by the from field
+    let mut valid_ranges: Vec<Range> = valid_ranges.iter().map(|r| Range { from: r.from, to: r.to }).collect();
+    valid_ranges.sort_by_key(|r| r.from);
+
+    let mut merged_ranges: Vec<Range> = Vec::new();
+    let mut current_range: Range = Range { from: (valid_ranges[0].from), to: (valid_ranges[0].to) };
+    for idx in 1..valid_ranges.len() {
+        if current_range.to < valid_ranges[idx].from {
+            // No merging
+            merged_ranges.push(current_range);
+            current_range = valid_ranges[idx].clone();
+        }
+        else { 
+            // Overlap => expand
+            assert!(current_range.to >= valid_ranges[idx].from);
+            current_range.to = max(valid_ranges[idx].to, current_range.to);
+        }
+        if idx == valid_ranges.len() - 1 {
+            // Edge case
+            merged_ranges.push(current_range);
+        }
+    }
+
+    // for r in &merged_ranges {
+    //     println!("{:?}", &r);
+    // }
+
+    // Collect
+    merged_ranges.iter()
+        .map(|range| range.to - range.from + 1)
+        .sum()
+}
+
+fn part2(valid_ranges: &Vec<Range>) -> u128 {
     // part2_bruteforce_memory(valid_ranges)
-    part2_using_sets(valid_ranges)
+    // part2_using_sets(valid_ranges)
+    part2_merging_ranges(valid_ranges)
 }
 
 fn main() {
